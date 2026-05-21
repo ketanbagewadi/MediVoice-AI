@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MedVoice AI — Medical Voice Assistant</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        /* =============================================
+       CSS VARIABLES & RESET
+    ============================================= */
+        :root {
+            --bg: #0b0f1a;
+            --surface: #121827;
+            --surface2: #1a2235;
+            --border: #1f2d45;
+            --accent: #00c9a7;
+            --accent-dim: rgba(0, 201, 167, 0.12);
+            --accent-glow: rgba(0, 201, 167, 0.3);
+            --red: #ff5f6d;
+            --text: #e8edf5;
+            --text-muted: #6b7a99;
+            --text-light: #a0aec0;
+            --radius: 14px;
+            --shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background grid pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 201, 167, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 201, 167, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* =============================================
+       LAYOUT
+    ============================================= */
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        /* =============================================
+       HEADER
+    ============================================= */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-dim);
+            border: 1px solid var(--accent-glow);
+            border-radius: 100px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .logo-badge .dot {
+            width: 7px;
+            height: 7px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            line-height: 1.1;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 300;
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* =============================================
+       CARDS
+    ============================================= */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: #2a3a58;
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* =============================================
+       RECORD SECTION
+    ============================================= */
+        .record-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Big record button */
+        .record-btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            background: var(--accent-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .record-btn:hover {
+            background: rgba(0, 201, 167, 0.2);
+            box-shadow: 0 0 0 8px var(--accent-dim);
+        }
+
+        .record-btn.recording {
+            border-color: var(--red);
+            background: rgba(255, 95, 109, 0.15);
+            box-shadow: 0 0 0 8px rgba(255, 95, 109, 0.1), 0 0 0 16px rgba(255, 95, 109, 0.05);
+            animation: recordPulse 1.5s infinite;
+        }
+
+        .record-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .record-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Waveform visualizer */
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 40px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .waveform.active {
+            opacity: 1;
+        }
+
+        .waveform-bar {
+            width: 3px;
+            border-radius: 3px;
+            background: var(--accent);
+            animation: wave 0.8s ease-in-out infinite;
+        }
+
+        /* Stagger each bar */
+        .waveform-bar:nth-child(1) {
+            animation-delay: 0.0s;
+            height: 12px;
+        }
+
+        .waveform-bar:nth-child(2) {
+            animation-delay: 0.1s;
+            height: 24px;
+        }
+
+        .waveform-bar:nth-child(3) {
+            animation-delay: 0.2s;
+            height: 18px;
+        }
+
+        .waveform-bar:nth-child(4) {
+            animation-delay: 0.3s;
+            height: 32px;
+        }
+
+        .waveform-bar:nth-child(5) {
+            animation-delay: 0.4s;
+            height: 20px;
+        }
+
+        .waveform-bar:nth-child(6) {
+            animation-delay: 0.5s;
+            height: 28px;
+        }
+
+        .waveform-bar:nth-child(7) {
+            animation-delay: 0.6s;
+            height: 16px;
+        }
+
+        .waveform-bar:nth-child(8) {
+            animation-delay: 0.7s;
+            height: 36px;
+        }
+
+        .waveform-bar:nth-child(9) {
+            animation-delay: 0.8s;
+            height: 22px;
+        }
+
+        .waveform-bar:nth-child(10) {
+            animation-delay: 0.9s;
+            height: 14px;
+        }
+
+        .waveform-bar:nth-child(11) {
+            animation-delay: 0.8s;
+            height: 30px;
+        }
+
+        .waveform-bar:nth-child(12) {
+            animation-delay: 0.7s;
+            height: 18px;
+        }
+
+        .waveform-bar:nth-child(13) {
+            animation-delay: 0.6s;
+            height: 36px;
+        }
+
+        .waveform-bar:nth-child(14) {
+            animation-delay: 0.5s;
+            height: 22px;
+        }
+
+        .waveform-bar:nth-child(15) {
+            animation-delay: 0.4s;
+            height: 10px;
+        }
+
+        /* Divider */
+        .or-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .or-divider::before,
+        .or-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Upload zone */
+        .upload-zone {
+            width: 100%;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone .filename {
+            color: var(--accent);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        /* =============================================
+       TRANSCRIPTION OUTPUT
+    ============================================= */
+        .transcription-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            min-height: 70px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text);
+            position: relative;
+        }
+
+        .transcription-box.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Editable */
+        .transcription-box[contenteditable="true"] {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .edit-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* =============================================
+       BUTTONS
+    ============================================= */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0b0f1a;
+            width: 100%;
+            padding: 14px;
+            font-size: 15px;
+            margin-top: 16px;
+        }
+
+        .btn-primary:hover {
+            background: #00e0bc;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px var(--accent-glow);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 7px 14px;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* =============================================
+       LOADING SPINNER
+    ============================================= */
+        .loading-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 32px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-text {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        /* =============================================
+       MEDICAL RESULTS
+    ============================================= */
+        .results-card {
+            display: none;
+        }
+
+        .results-card.visible {
+            display: block;
+        }
+
+        .result-text {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-light);
+            white-space: pre-wrap;
+            /* preserve line breaks from model output */
+        }
+
+        /* Style numbered sections from BioMistral output */
+        .result-text strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* =============================================
+       CONVERSATION HISTORY
+    ============================================= */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .history-item {
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .history-item.user {
+            background: var(--accent-dim);
+            border-left: 3px solid var(--accent);
+            color: var(--text);
+        }
+
+        .history-item.assistant {
+            background: var(--surface2);
+            border-left: 3px solid #7b61ff;
+            color: var(--text-light);
+        }
+
+        .history-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 32px;
+        }
+
+        /* =============================================
+       DISCLAIMER BANNER
+    ============================================= */
+        .disclaimer {
+            background: rgba(255, 193, 7, 0.07);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            font-size: 12px;
+            color: #e0b800;
+            line-height: 1.6;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .disclaimer strong {
+            color: #ffd600;
+        }
+
+        /* =============================================
+       STATUS TOAST
+    ============================================= */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--text);
+            box-shadow: var(--shadow);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .toast.error {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* =============================================
+       ANIMATIONS
+    ============================================= */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes recordPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 8px rgba(255, 95, 109, 0.15), 0 0 0 16px rgba(255, 95, 109, 0.05);
+            }
+
+            50% {
+                box-shadow: 0 0 0 12px rgba(255, 95, 109, 0.2), 0 0 0 24px rgba(255, 95, 109, 0.07);
+            }
+        }
+
+        @keyframes wave {
+
+            0%,
+            100% {
+                transform: scaleY(0.4);
+            }
+
+            50% {
+                transform: scaleY(1);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes dots {
+            0% {
+                content: '.';
+            }
+
+            33% {
+                content: '..';
+            }
+
+            66% {
+                content: '...';
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        /* =============================================
+       RESPONSIVE
+    ============================================= */
+        @media (max-width: 600px) {
+            .wrapper {
+                padding: 24px 16px 60px;
+            }
+
+            h1 {
+                font-size: 1.9rem;
+            }
+
+            .record-btn {
+                width: 76px;
+                height: 76px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <!-- HEADER -->
+        <header>
+            <div class="logo-badge">
+                <span class="dot"></span>
+                AI-Powered · Medical Assistant
+            </div>
+            <h1>Med<em>Voice</em> AI</h1>
+            <p class="subtitle">
+                Speak or upload a patient voice recording. Our AI converts speech to text
+                and provides medical insights powered by BioMistral.
+            </p>
+        </header>
+
+
+        <!-- STEP 1: RECORD / UPLOAD -->
+        <div class="card">
+            <div class="card-title">Step 1 — Record or Upload Audio</div>
+
+            <div class="record-area">
+
+                <!-- Mic button -->
+                <button class="record-btn" id="recordBtn" title="Click to start recording">
+                    <!-- Mic icon (shown when idle) -->
+                    <svg id="micIcon" fill="none" viewBox="0 0 24 24" stroke="#00c9a7" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 10a7 7 0 01-14 0M12 19v4M8 23h8" />
+                    </svg>
+                    <!-- Stop icon (shown when recording) -->
+                    <svg id="stopIcon" fill="#ff5f6d" viewBox="0 0 24 24" style="display:none">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                </button>
+
+                <!-- Waveform animation (visible during recording) -->
+                <div class="waveform" id="waveform">
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                    <div class="waveform-bar"></div>
+                </div>
+
+                <span class="record-label" id="recordLabel">Click mic to start recording</span>
+
+                <div class="or-divider">or</div>
+
+                <!-- File upload area -->
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="audioFile" accept="audio/*" />
+                    <div class="upload-icon">🎵</div>
+                    <div>Drop an audio file here or <u>click to browse</u></div>
+                    <div class="filename" id="fileName"></div>
+                </div>
+
+            </div>
+
+            <!-- Transcribe button -->
+            <button class="btn btn-primary" id="transcribeBtn" disabled>
+                🎙️ Transcribe Audio
+            </button>
+
+        </div>
+
+
+        <!-- STEP 2: TRANSCRIPTION OUTPUT -->
+        <div class="card">
+            <div class="card-title">Step 2 — Transcribed Text</div>
+
+            <!-- Loading state -->
+            <div class="loading-overlay" id="transcribeLoading">
+                <div class="spinner"></div>
+                <div class="loading-text">Wav2Vec2 is transcribing<span class="loading-dots"></span></div>
+            </div>
+
+            <!-- Result -->
+            <div class="transcription-box empty" id="transcriptionBox" contenteditable="false">
+                Your transcribed text will appear here...
+            </div>
+            <div class="edit-hint" id="editHint">
+                ✏️ You can edit this text before sending to the medical AI.
+            </div>
+
+            <!-- Analyze button -->
+            <button class="btn btn-primary" id="analyzeBtn" disabled>
+                🧠 Analyze with BioMistral
+            </button>
+        </div>
+
+
+        <!-- STEP 3: MEDICAL SUGGESTIONS -->
+        <div class="card results-card" id="resultsCard">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <div class="card-title" style="margin-bottom:0">Step 3 — Medical Suggestions</div>
+            </div>
+            <br />
+
+            <!-- Loading state -->
+            <div class="loading-overlay" id="analyzeLoading">
+                <div class="spinner"></div>
+                <div class="loading-text">BioMistral is analyzing<span class="loading-dots"></span></div>
+            </div>
+
+            <!-- Result text -->
+            <div class="result-text" id="resultText"></div>
+        </div>
+
+
+        <!-- CONVERSATION HISTORY -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+                <div class="card-title" style="margin-bottom:0; flex:1">Conversation History</div>
+                <button class="btn btn-ghost" id="clearHistoryBtn">Clear</button>
+            </div>
+
+            <div class="history-list" id="historyList">
+                <div class="history-empty">No conversations yet. Start by recording your voice!</div>
+            </div>
+        </div>
+
+
+        <!-- DISCLAIMER -->
+        <div class="disclaimer">
+            ⚠️ <strong>Disclaimer:</strong>
+            This AI assistant is for <strong>educational purposes only</strong> and is
+            <strong>not a replacement for professional medical advice</strong>.
+            Always consult a qualified healthcare professional for diagnosis and treatment.
+        </div>
+
+    </div><!-- /wrapper -->
+
+
+    <!-- STATUS TOAST -->
+    <div class="toast" id="toast"></div>
+
+
+    <!-- =============================================
+       JAVASCRIPT
+  ============================================= -->
+    <script>
+        // --------------------------------------------------------
+        // CONFIG — change this if your FastAPI runs on a different port
+        // --------------------------------------------------------
+        const API_BASE = "http://localhost:8000";
+
+        // --------------------------------------------------------
+        // STATE
+        // --------------------------------------------------------
+        let mediaRecorder = null;   // Web Audio API recorder
+        let audioChunks = [];     // raw audio chunks collected during recording
+        let recordedBlob = null;   // final recorded audio Blob
+        let uploadedFile = null;   // file selected from disk
+        let isRecording = false;
+
+        // --------------------------------------------------------
+        // DOM REFERENCES
+        // --------------------------------------------------------
+        const recordBtn = document.getElementById("recordBtn");
+        const micIcon = document.getElementById("micIcon");
+        const stopIcon = document.getElementById("stopIcon");
+        const waveform = document.getElementById("waveform");
+        const recordLabel = document.getElementById("recordLabel");
+        const uploadZone = document.getElementById("uploadZone");
+        const audioFileInput = document.getElementById("audioFile");
+        const fileNameEl = document.getElementById("fileName");
+        const transcribeBtn = document.getElementById("transcribeBtn");
+        const analyzeBtn = document.getElementById("analyzeBtn");
+        const transcriptionBox = document.getElementById("transcriptionBox");
+        const editHint = document.getElementById("editHint");
+        const transcribeLoading = document.getElementById("transcribeLoading");
+        const analyzeLoading = document.getElementById("analyzeLoading");
+        const resultsCard = document.getElementById("resultsCard");
+        const resultText = document.getElementById("resultText");
+        const historyList = document.getElementById("historyList");
+        const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+        const toast = document.getElementById("toast");
+
+        // --------------------------------------------------------
+        // TOAST HELPER
+        // --------------------------------------------------------
+        function showToast(msg, type = "info", duration = 3000) {
+            toast.textContent = msg;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => { toast.className = "toast"; }, duration);
+        }
+
+        // --------------------------------------------------------
+        // RECORDING
+        // Uses the browser's MediaRecorder API to capture mic audio.
+        // The recorded audio is stored as a Blob (audio/webm format).
+        // --------------------------------------------------------
+        recordBtn.addEventListener("click", async () => {
+            if (!isRecording) {
+                // --- START RECORDING ---
+                try {
+                    // Ask browser for mic permission
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioChunks = [];
+                    mediaRecorder = new MediaRecorder(stream);
+
+                    // Each time data is available, push it to our array
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunks.push(e.data);
+                    };
+
+                    // When recording stops, combine chunks into a Blob
+                    mediaRecorder.onstop = () => {
+                        recordedBlob = new Blob(audioChunks, { type: "audio/webm" });
+                        uploadedFile = null;       // clear any uploaded file
+                        fileNameEl.textContent = "";
+                        transcribeBtn.disabled = false;
+                        showToast("Recording saved! Click Transcribe.", "success");
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+
+                    // Update UI
+                    recordBtn.classList.add("recording");
+                    micIcon.style.display = "none";
+                    stopIcon.style.display = "block";
+                    waveform.classList.add("active");
+                    recordLabel.textContent = "Recording... Click to stop";
+
+                } catch (err) {
+                    showToast("Mic access denied. Please allow microphone.", "error");
+                }
+
+            } else {
+                // --- STOP RECORDING ---
+                mediaRecorder.stop();
+                // Stop all mic tracks so browser mic indicator goes away
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                isRecording = false;
+
+                recordBtn.classList.remove("recording");
+                micIcon.style.display = "block";
+                stopIcon.style.display = "none";
+                waveform.classList.remove("active");
+                recordLabel.textContent = "Click mic to start recording";
+            }
+        });
+
+        // --------------------------------------------------------
+        // FILE UPLOAD
+        // --------------------------------------------------------
+        uploadZone.addEventListener("click", () => audioFileInput.click());
+
+        // Drag & Drop
+        uploadZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadZone.classList.add("dragover");
+        });
+        uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("dragover"));
+        uploadZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove("dragover");
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith("audio/")) handleFileSelect(file);
+            else showToast("Please drop an audio file.", "error");
+        });
+
+        audioFileInput.addEventListener("change", () => {
+            if (audioFileInput.files[0]) handleFileSelect(audioFileInput.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            uploadedFile = file;
+            recordedBlob = null;    // clear any recording
+            fileNameEl.textContent = `✅ ${file.name}`;
+            transcribeBtn.disabled = false;
+            showToast(`File selected: ${file.name}`, "success");
+        }
+
+        // --------------------------------------------------------
+        // TRANSCRIBE — send audio to FastAPI /transcribe
+        // --------------------------------------------------------
+        transcribeBtn.addEventListener("click", async () => {
+            const audioData = recordedBlob || uploadedFile;
+            if (!audioData) return;
+
+            // Show loading
+            transcribeLoading.classList.add("active");
+            transcriptionBox.style.display = "none";
+            editHint.style.display = "none";
+            transcribeBtn.disabled = true;
+            analyzeBtn.disabled = true;
+
+            try {
+                // Build FormData — FastAPI expects the file as "audio" field
+                const formData = new FormData();
+                const filename = uploadedFile ? uploadedFile.name : "recording.webm";
+                formData.append("audio", audioData, filename);
+
+                const res = await fetch(`${API_BASE}/transcribe`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail || "Transcription failed");
+
+                // Display transcription
+                transcriptionBox.textContent = data.transcription;
+                transcriptionBox.className = "transcription-box fade-in";
+                transcriptionBox.contentEditable = "true";   // allow editing
+                editHint.style.display = "block";
+                analyzeBtn.disabled = false;
+
+                showToast("Transcription complete!", "success");
+                refreshHistory();
+
+            } catch (err) {
+                showToast(`Error: ${err.message}`, "error");
+                transcriptionBox.textContent = "Transcription failed. Check if the backend is running.";
+                transcriptionBox.className = "transcription-box empty";
+            } finally {
+                transcribeLoading.classList.remove("active");
+                transcriptionBox.style.display = "block";
+                transcribeBtn.disabled = false;
+            }
+        });
+
+        // --------------------------------------------------------
+        // ANALYZE — send text to FastAPI /analyze
+        // --------------------------------------------------------
+        analyzeBtn.addEventListener("click", async () => {
+            const text = transcriptionBox.textContent.trim();
+            if (!text) { showToast("No text to analyze.", "error"); return; }
+
+            // Show loading
+            resultsCard.classList.add("visible");
+            analyzeLoading.classList.add("active");
+            resultText.textContent = "";
+            analyzeBtn.disabled = true;
+
+            // Scroll to results
+            resultsCard.scrollIntoView({ behavior: "smooth", block: "start" });
+
+            try {
+                const res = await fetch(`${API_BASE}/analyze`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.detail || "Analysis failed");
+
+                // Format and display
+                resultText.innerHTML = formatMedicalText(data.suggestions);
+                resultText.classList.add("fade-in");
+                showToast("Medical analysis ready!", "success");
+                refreshHistory();
+
+            } catch (err) {
+                resultText.textContent = `Analysis failed: ${err.message}`;
+                showToast(`Error: ${err.message}`, "error");
+            } finally {
+                analyzeLoading.classList.remove("active");
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        // --------------------------------------------------------
+        // FORMAT MEDICAL TEXT
+        // Makes numbered sections bold and adds line breaks
+        // --------------------------------------------------------
+        function formatMedicalText(text) {
+            // Bold numbered headings like "1. Possible conditions"
+            return text
+                .replace(/(\d+\.\s[^\n]+)/g, "<strong>$1</strong>")
+                .replace(/\n/g, "<br/>");
+        }
+
+        // --------------------------------------------------------
+        // HISTORY — fetch from FastAPI and render
+        // --------------------------------------------------------
+        async function refreshHistory() {
+            try {
+                const res = await fetch(`${API_BASE}/history`);
+                const data = await res.json();
+
+                if (!data.history || data.history.length === 0) {
+                    historyList.innerHTML = `<div class="history-empty">No conversations yet.</div>`;
+                    return;
+                }
+
+                historyList.innerHTML = data.history
+                    .slice()                  // copy array
+                    .reverse()                // newest first
+                    .map(item => `
+            <div class="history-item ${item.role}">
+              <div class="history-meta">
+                ${item.role === "user" ? "🎙 Patient" : "🤖 BioMistral"}
+                <span>${item.time}</span>
+              </div>
+              ${item.text.length > 300
+                            ? item.text.slice(0, 300) + "..."
+                            : item.text}
+            </div>
+          `).join("");
+
+            } catch {
+                // Backend might not be running yet — that's ok
+            }
+        }
+
+        // Clear history button
+        clearHistoryBtn.addEventListener("click", async () => {
+            try {
+                await fetch(`${API_BASE}/history`, { method: "DELETE" });
+                historyList.innerHTML = `<div class="history-empty">History cleared.</div>`;
+                showToast("History cleared.", "success");
+            } catch {
+                showToast("Could not connect to backend.", "error");
+            }
+        });
+
+        // Load history on page open
+        refreshHistory();
+    </script>
+</body>
+
+</html>
