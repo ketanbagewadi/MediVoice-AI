@@ -13,8 +13,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 MODEL_NAME = "BioMistral/BioMistral-7B"
 
-# Auto-detect GPU
-device = "cuda" if torch.cuda.is_available() else "cpu"
+
+device = "cuda" if torch.cuda.is_available() else "cpu"                 #GPU detection
 print(f"[LLM] Using device: {device}")
 print("[LLM] Loading BioMistral-7B... (first time download may take a few minutes)")
 
@@ -24,7 +24,7 @@ model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
     device_map="auto",       # auto-place layers on GPU/CPU
-    low_cpu_mem_usage=True,  # saves RAM during loading
+    low_cpu_mem_usage=True,  # saves RAM
 )
 model.eval()
 print("[LLM] BioMistral-7B ready!")
@@ -88,8 +88,7 @@ def analyze_symptoms(patient_text: str, max_new_tokens: int = 512) -> str:
     print(f"[LLM] Done. Response length: {len(response)} chars")
     return response.strip()
 
-
-# Quick test
+#main
 if __name__ == "__main__":
     test = "I have a headache, slight fever, and sore throat for 2 days."
     print(analyze_symptoms(test))
