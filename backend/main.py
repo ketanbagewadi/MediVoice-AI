@@ -1,15 +1,3 @@
-# ============================================================
-# main.py — FastAPI Backend
-# ============================================================
-# Two endpoints:
-#   POST /transcribe → audio file → transcribed text
-#   POST /analyze    → patient text → medical suggestions
-#   GET  /history    → returns conversation history
-#   DELETE /history  → clears history
-#
-# Run with:  uvicorn main:app --reload --port 8000
-# ============================================================
-
 import os
 import uuid
 import shutil
@@ -24,17 +12,14 @@ from pydantic import BaseModel
 from stt import transcribe_audio
 from llm import analyze_symptoms
 
-# ----------------------------------------------------------
-# APP SETUP
-# ----------------------------------------------------------
+
 app = FastAPI(
     title="Medical Voice Assistant API",
     description="Speech-to-text + BioMistral medical analysis",
     version="1.0.0"
 )
 
-# Allow requests from the HTML frontend (CORS)
-# In production, replace "*" with your actual frontend URL
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,29 +31,22 @@ app.add_middleware(
 UPLOAD_DIR = "temp_audio"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# In-memory conversation history (resets when server restarts)
-# Format: list of {"role": "user"/"assistant", "text": "...", "time": "..."}
+
 conversation_history: List[dict] = []
 
 
-# ----------------------------------------------------------
-# SCHEMAS
-# ----------------------------------------------------------
+
 class AnalyzeRequest(BaseModel):
     """Request body for the /analyze endpoint"""
-    text: str  # the transcribed patient text
+    text: str  
 
 
 class HistoryItem(BaseModel):
     """One item in conversation history"""
-    role: str       # "user" or "assistant"
+    role: str       
     text: str
     time: str
 
-
-# ----------------------------------------------------------
-# ROUTES
-# ----------------------------------------------------------
 
 @app.get("/")
 def root():
@@ -87,7 +65,6 @@ async def transcribe(audio: UploadFile = File(...)):
            -F "audio=@patient_voice.wav"
     """
 
-    # Validate file type
     allowed_types = ["audio/wav", "audio/mpeg", "audio/ogg", "audio/webm", "audio/mp4"]
     if audio.content_type not in allowed_types:
         raise HTTPException(
@@ -95,19 +72,15 @@ async def transcribe(audio: UploadFile = File(...)):
             detail=f"Unsupported file type: {audio.content_type}. Use wav, mp3, ogg, or webm."
         )
 
-    # Save uploaded file with a unique name to avoid conflicts
     filename  = f"{uuid.uuid4()}_{audio.filename}"
     filepath  = os.path.join(UPLOAD_DIR, filename)
 
     try:
-        # Write the uploaded bytes to disk
         with open(filepath, "wb") as f:
             shutil.copyfileobj(audio.file, f)
 
-        # Run Wav2Vec2 transcription
         transcription = transcribe_audio(filepath)
 
-        # Save to history
         conversation_history.append({
             "role": "user",
             "text": transcription,
@@ -123,7 +96,6 @@ async def transcribe(audio: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
     finally:
-        # Always clean up the temp file
         if os.path.exists(filepath):
             os.remove(filepath)
 
@@ -145,7 +117,6 @@ async def analyze(request: AnalyzeRequest):
     try:
         suggestions = analyze_symptoms(request.text)
 
-        # Save assistant response to history
         conversation_history.append({
             "role": "assistant",
             "text": suggestions,
